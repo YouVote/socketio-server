@@ -1,10 +1,11 @@
 {
 	"name":"avalon-server",
-	"version":"0.0.1",
+	"version":"1.0.0",
 	"description": "Nodejs server for Avalon eVoter",
 	"author":"Gabriel Wu <gabrielwu84@gmail.com>",
+	"main": "server.js",
 	"scripts":{
-		"start":"node server.js"
+		"start":"node --use_strict server.js"
 	},
 	"repository":{
 		"type":"git",

@@ -2,11 +2,11 @@
 
 module.exports={
 	genChar:function (){
-		i=Math.floor(Math.random()*36);
+		var i=Math.floor(Math.random()*36);
 		return (i>9?String.fromCharCode(i-10+97):i.toString());
 	},
 
 	genStr:function (len){
-		s='';while(len--){s+=module.exports.genChar();}return s;
+		var s='';while(len--){s+=module.exports.genChar();}return s;
 	}
 }

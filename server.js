@@ -7,7 +7,7 @@ var server = app.listen(port, ipaddress, function () {
 });
 var io = require('socket.io',{transports: ['websocket']})(server);
 
-function game(hostSocket){
+function gameEngine(hostSocket){
 	var players={};
 	var host=hostSocket;
 	this.playerJoin=function(socket){
@@ -32,23 +32,23 @@ function game(hostSocket){
 	}
 }
 
-var gameEngine={
+var globalEngine={
 	gameIds:{},
 	newGame:function(hostSocket){
 		var generateId=require('./genId').genStr;
-		gameId=generateId(6);
-		while(gameId in gameEngine.gameIds){
+		var gameId=generateId(6);
+		while(gameId in globalEngine.gameIds){
 			gameId=generateId(6);
 		}
-		var gameObj=new game(hostSocket);
-		gameEngine.gameIds[gameId]=gameObj;
+		var gameObj=new gameEngine(hostSocket);
+		globalEngine.gameIds[gameId]=gameObj;
 		return {'gameId':gameId,'gameObj':gameObj};
 	},
 	getGame:function(gameId){
-		return gameEngine.gameIds[gameId];
+		return globalEngine.gameIds[gameId];
 	},
 	delGame:function(gameId){
-		delete gameEngine.gameIds[gameId];
+		delete globalEngine.gameIds[gameId];
 	}
 };
 
@@ -59,14 +59,14 @@ io.on('connect',function(socket){
 		socket.gameData.usertype=data.type;
 		switch(socket.gameData.usertype){
 			case 'host':
-				gameParam=gameEngine.newGame(socket);
+				var gameParam=globalEngine.newGame(socket);
 				socket.gameData.gameId=gameParam.gameId;
 				socket.gameData.gameObj=gameParam.gameObj;
 				socket.emit("newGameId=",socket.gameData.gameId);
 				break;
 			case 'play':
 				socket.gameData.gameId=data.gameId;
-				socket.gameData.gameObj=gameEngine.getGame(socket.gameData.gameId);
+				socket.gameData.gameObj=globalEngine.getGame(socket.gameData.gameId);
 				if(typeof(socket.gameData.gameObj)=='object'){
 					socket.gameData.gameObj.playerJoin(socket);
 					socket.emit("gameStatus");
@@ -76,7 +76,7 @@ io.on('connect',function(socket){
 				}
 				break;
 			default:
-				socket.emit('serverShutDown','Unrecognized usertype '+socket.gamedata.usertype);
+				socket.emit('serverShutDown','Unrecognized usertype '+socket.gameData.usertype);
 				socket.disconnect();
 		}
 	});
@@ -86,10 +86,10 @@ io.on('connect',function(socket){
 				socket.gameData.gameObj.hostToPlayer(data.socketId,data.msg);
 				break;
 			case 'play':
-				socket.gameData.gameObj.playerToHost(socket.id,data.msg);
+				socket.gameData.gameObj.playerToHost(socket.id,data);
 				break;
 			default:
-				socket.emit('serverShutDown','Unrecognized usertype '+socket.gamedata.usertype);
+				socket.emit('serverShutDown','Unrecognized usertype '+socket.gameData.usertype);
 				socket.disconnect();
 		}
 
@@ -98,13 +98,13 @@ io.on('connect',function(socket){
 		switch(socket.gameData.usertype){
 			case 'host':
 				socket.gameData.gameObj.hostQuit();
-				gameEngine.deleteGame(socket.gameData.gameId);
+				globalEngine.delGame(socket.gameData.gameId);
 				break;
 			case 'play':
 				socket.gameData.gameObj.playerQuit(socket.id);
 				break;
 			default:
-				socket.emit('serverShutDown','Unrecognized usertype '+socket.gamedata.usertype);
+				socket.emit('serverShutDown','Unrecognized usertype '+socket.gameData.usertype);
 				socket.disconnect();
 		}
 	});

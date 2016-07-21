@@ -1,35 +1,21 @@
 {
-  "name": "OpenShift-Sample-App",
-  "version": "1.0.0",
-  "description": "OpenShift Sample Application",
-  "keywords": [
-    "OpenShift",
-    "Node.js",
-    "application",
-    "openshift"
-  ],
-  "author": {
-    "name": "OpenShift",
-    "email": "ramr@example.org",
-    "url": "http://www.openshift.com/"
-  },
-  "homepage": "http://www.openshift.com/",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/openshift/origin-server"
-  },
-
-  "engines": {
-    "node": ">= 0.6.0",
-    "npm": ">= 1.0.0"
-  },
-
-  "dependencies": {
-    "express": "~3.4.4"
-  },
-  "devDependencies": {},
-  "bundleDependencies": [],
-
-  "private": true,
-  "main": "server.js"
+	"name":"avalon-server",
+	"version":"0.0.1",
+	"description": "Nodejs server for Avalon eVoter",
+	"author":"Gabriel Wu <gabrielwu84@gmail.com>",
+	"scripts":{
+		"start":"node server.js"
+	},
+	"repository":{
+		"type":"git",
+		"url":"https://github.com/gabrielwu84/avalon-server"
+	},
+	"dependencies":{
+		"socket.io":"1.4.8"
+	},
+	"private":true,
+	"bugs": {
+		"url": "https://github.com/gabrielwu84/avalon-server/issues"
+	},
+	"homepage": "https://github.com/gabrielwu84/avalon-server#readme"
 }

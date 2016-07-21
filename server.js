@@ -1,5 +1,11 @@
-console.log('socket listening on port 23784');
-var io = require('socket.io').listen(23784);
+var ipaddress = process.env.OPENSHIFT_NODEJS_IP;
+var port      = process.env.OPENSHIFT_NODEJS_PORT || 8080;
+
+var app = require('express')();
+var server = app.listen(port, ipaddress, function () {
+	console.log('Avalon eVoter listening on port '+port+'!');
+});
+var io = require('socket.io',{transports: ['websocket']})(server);
 
 function game(hostSocket){
 	var players={};
@@ -7,12 +13,10 @@ function game(hostSocket){
 	this.playerJoin=function(socket){
 		host.emit('playerJoin',socket.id);
 		players[socket.id]=socket;
-		console.log(Object.keys(players));
 	}
 	this.playerQuit=function(playerSocketId){
 		host.emit('playerQuit',playerSocketId);
 		delete players[playerSocketId];
-		console.log(Object.keys(players));
 	}
 	this.hostQuit=function(){
 		for(var idx in players){
@@ -49,11 +53,9 @@ var gameEngine={
 };
 
 io.on('connect',function(socket){
-	console.log('new connection');
 	socket.gameData={};
 	socket.emit('connectType?');
 	socket.on('connectType=',function(data){
-		console.log('Connection Type: '+data.type);
 		socket.gameData.usertype=data.type;
 		switch(socket.gameData.usertype){
 			case 'host':
@@ -105,10 +107,13 @@ io.on('connect',function(socket){
 				socket.emit('serverShutDown','Unrecognized usertype '+socket.gamedata.usertype);
 				socket.disconnect();
 		}
-		console.log("Disconnect: "+JSON.stringify(socket.id));
 	});
 
 	setTimeout(function(){
 		socket.emit('ping',{beat:1});
 	},25000);
 })
+
+app.get('/', function (req, res) {
+	res.send('Avalon eVoter server');
+});

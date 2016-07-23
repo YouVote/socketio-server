@@ -25,7 +25,11 @@ function gameEngine(hostSocket){
 		} 
 	}
 	this.hostToPlayer=function(playerSocketId,msg){
-		players[playerSocketId].emit('relay',msg);
+		try{
+			players[playerSocketId].emit('relay',msg);
+		} catch(err) {
+			hostSocket.emit('serverError', err);
+		}
 	}
 	this.playerToHost=function(playerSocketId,msg){
 		host.emit('relay',{'socketId':playerSocketId,'msg':msg});

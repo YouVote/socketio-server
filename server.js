@@ -1,9 +1,9 @@
 var ipaddress = process.env.OPENSHIFT_NODEJS_IP;
 var port      = process.env.OPENSHIFT_NODEJS_PORT || 8080;
-
+// 8443
 var app = require('express')();
 var server = app.listen(port, ipaddress, function () {
-	console.log('Avalon eVoter listening on port '+port+'!');
+	console.log('eClicker Server listening on port '+port+'!');
 });
 var io = require('socket.io',{transports: ['websocket']})(server);
 
@@ -36,23 +36,30 @@ function gameEngine(hostSocket){
 	}
 }
 
+
 var globalEngine={
-	gameIds:{},
-	newGame:function(hostSocket){
+	apps:{ // appname+gameId uniquely defines game
+		cl:{gameIds:{}},// eClicker
+		av:{gameIds:{}} // avalon
+	}, 
+	newGame:function(appname,hostSocket){
 		var generateId=require('./genId').genStr;
 		var gameId=generateId(6);
-		while(gameId in globalEngine.gameIds){
+		while(gameId in globalEngine.apps[appname].gameIds){
 			gameId=generateId(6);
 		}
 		var gameObj=new gameEngine(hostSocket);
-		globalEngine.gameIds[gameId]=gameObj;
+		globalEngine.apps[appname].gameIds[gameId]=gameObj;
 		return {'gameId':gameId,'gameObj':gameObj};
 	},
-	getGame:function(gameId){
-		return globalEngine.gameIds[gameId];
+	getGame:function(appname,gameId){
+		return globalEngine.apps[appname].gameIds[gameId];
 	},
-	delGame:function(gameId){
-		delete globalEngine.gameIds[gameId];
+	delGame:function(appname,gameId){
+		delete globalEngine.apps[appname].gameIds[gameId];
+	},
+	checkApp:function(appname){
+		return (typeof(globalEngine.apps[appname])=='object');
 	}
 };
 
@@ -60,17 +67,23 @@ io.on('connect',function(socket){
 	socket.gameData={};
 	socket.emit('connectType?');
 	socket.on('connectType=',function(data){
+		// data contain app, type, and gameId.
+		socket.gameData.appname=data.app;
+		if(!globalEngine.checkApp(socket.gameData.appname)){
+			socket.emit('serverShutDown','app not found '+socket.gameData.appname);
+			socket.disconnect();
+		}
 		socket.gameData.usertype=data.type;
 		switch(socket.gameData.usertype){
 			case 'host':
-				var gameParam=globalEngine.newGame(socket);
+				var gameParam=globalEngine.newGame(socket.gameData.appname,socket);
 				socket.gameData.gameId=gameParam.gameId;
 				socket.gameData.gameObj=gameParam.gameObj;
 				socket.emit("newGameId=",socket.gameData.gameId);
 				break;
 			case 'play':
 				socket.gameData.gameId=data.gameId;
-				socket.gameData.gameObj=globalEngine.getGame(socket.gameData.gameId);
+				socket.gameData.gameObj=globalEngine.getGame(socket.gameData.appname,socket.gameData.gameId);
 				if(typeof(socket.gameData.gameObj)=='object'){
 					socket.gameData.gameObj.playerJoin(socket);
 					socket.emit("gameStatus");
@@ -80,7 +93,7 @@ io.on('connect',function(socket){
 				}
 				break;
 			default:
-				socket.emit('serverShutDown','Unrecognized usertype '+socket.gameData.usertype);
+				socket.emit('serverShutDown','usertype not recognised '+socket.gameData.usertype);
 				socket.disconnect();
 		}
 	});
@@ -93,7 +106,7 @@ io.on('connect',function(socket){
 				socket.gameData.gameObj.playerToHost(socket.id,data);
 				break;
 			default:
-				socket.emit('serverShutDown','Unrecognized usertype '+socket.gameData.usertype);
+				socket.emit('serverShutDown','usertype not recognised '+socket.gameData.usertype);
 				socket.disconnect();
 		}
 
@@ -102,13 +115,13 @@ io.on('connect',function(socket){
 		switch(socket.gameData.usertype){
 			case 'host':
 				socket.gameData.gameObj.hostQuit();
-				globalEngine.delGame(socket.gameData.gameId);
+				globalEngine.delGame(socket.gameData.appname,socket.gameData.gameId);
 				break;
 			case 'play':
 				socket.gameData.gameObj.playerQuit(socket.id);
 				break;
 			default:
-				socket.emit('serverShutDown','Unrecognized usertype '+socket.gameData.usertype);
+				socket.emit('serverShutDown','usertype not recognised '+socket.gameData.usertype);
 				socket.disconnect();
 		}
 	});
@@ -119,5 +132,5 @@ io.on('connect',function(socket){
 })
 
 app.get('/', function (req, res) {
-	res.send('Avalon eVoter server');
+	res.send('eClicker socketIO Server');
 });

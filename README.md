@@ -9,7 +9,7 @@ Install on development machine
 Run the following commands:
 ```
 git init
-git remote add origin https://github.com/gabrielwu84/avalon-server
+git remote add origin https://github.com/YouVote/socketio-server.git
 git pull
 npm install
 npm start
